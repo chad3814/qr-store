@@ -1,0 +1,4 @@
+recursive-include qrstore/public *
+include qrstore/public/favicon.ico
+recursive-include qrstore/i18n *
+recursive-include qrstore/templates *
