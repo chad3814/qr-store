@@ -4,9 +4,19 @@
     </head>
 
 <body py:block="body" py:strip="True">
-    <img src="/qrcode/${container.uuid}"/><br/>
+    <h2 py:content="container['title']">Title Here</h2>
+    <img src="/qrcode/${container['uuid']}"/><br/>
     <ul>
-        <li>items...</li>
+        <li py:for="item in container['items']">
+            <span py:content="item">Item text here</span>
+        </li>
+        <li>
+            <form action="/item" method="post">
+                <input type="hidden" name="uuid" value="${container['uuid']}"/>
+                <input type="text" name="item"/>
+                <input type="submit" name="submit" value="Add"/>
+            </form>
+        </li>
     </ul>
 </body>
 </html>

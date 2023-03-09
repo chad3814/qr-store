@@ -2,7 +2,7 @@
 """Main Controller"""
 
 from tg import expose, flash, require, url, lurl
-from tg import request, redirect, tmpl_context, abort
+from tg import request, redirect, tmpl_context, abort, session
 from tg.i18n import ugettext as _, lazy_ugettext as l_
 from tg.exceptions import HTTPFound
 from tg import predicates
@@ -18,8 +18,20 @@ from qrstore.model.container import Container
 from uuid6 import uuid7
 import qrcode
 import io
+import copy
+import logging
+log = logging.getLogger(__name__)
 
 __all__ = ['RootController']
+
+def containerToDict(container):
+    return {
+        "container_id": container.container_id,
+        "owner_id": container.owner_id,
+        "title": container.title,
+        "uuid": container.uuid,
+        "items": container.items
+    }
 
 class RootController(BaseController):
     """
@@ -44,10 +56,16 @@ class RootController(BaseController):
     @expose('qrstore.templates.index')
     def index(self):
         """Handle the front-page."""
-        return dict(page='index')
+        if not request.identity or not request.identity['user']:
+            log.debug('no user')
+            raise redirect('/login')
+        containers = DBSession.query(Container).filter_by(owner_id=request.identity['user'].user_id).order_by(Container.title)
+        containers = map(containerToDict, containers)
+        return dict(containers=containers)
     @expose('qrstore.templates.container')
     def container(self, uuid):
         cont = DBSession.query(Container).filter_by(uuid=uuid).one()
+        cont = containerToDict(cont)
         return dict(container=cont)
     @expose(content_type='image/png')
     def qrcode(self, uuid):
@@ -61,9 +79,25 @@ class RootController(BaseController):
         return bytes_arr.getvalue()
     @expose()
     def new(self):
+        if not request.identity or not request.identity['user']:
+            raise redirect('/login')
         uuid = uuid7()
-        cont = Container(uuid=uuid, title='New Container')
+        cont = Container(uuid=str(uuid), title='New Container', owner_id=request.identity['user'].user_id, items=[])
+        DBSession.add(cont)
         raise redirect('/container/' + str(uuid))
+    @expose()
+    def item(self, uuid, item, submit):
+        log.debug('item: ' + uuid + ' ' + item)
+        from sqlalchemy.exc import InvalidRequestError
+        try:
+            cont = DBSession.query(Container).filter_by(uuid=uuid).one()
+        except InvalidRequestError:
+            raise abort(404)
+        items = copy.deepcopy(cont.items)
+        items.append(item)
+        cont.items = items
+        log.info('items: ' + ', '.join(cont.items))
+        raise redirect('/container/' + uuid)
 
     @expose('qrstore.templates.login')
     def login(self, came_from=lurl('/'), failure=None, login=''):

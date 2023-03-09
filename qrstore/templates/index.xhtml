@@ -5,7 +5,10 @@
 
     <body py:block="body" py:strip="True">
       <ul>
-        <li>containers...</li>
+        <li py:for="container in containers">
+          <a href="${tg.url('/container/' + container['uuid'])}" py:content="container['title']">Container Title Here</a>
+        </li>
+        <li><a href="/new">Make a new container</a></li>
       </ul>
     </body>
 </html>

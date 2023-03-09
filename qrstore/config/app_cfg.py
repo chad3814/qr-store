@@ -88,6 +88,7 @@ class ApplicationAuthMetadata(TGAuthMetadata):
                 params['login'] = identity['login']
                 params['failure'] = 'invalid-password'
 
+            print(params)
             # When authentication fails send user to login page.
             environ['repoze.who.application'] = HTTPFound(
                 location=environ['SCRIPT_NAME'] + '?'.join(('/login', urlencode(params, True)))
