@@ -12,35 +12,12 @@ def bootstrap(command, conf, vars):
     from sqlalchemy.exc import IntegrityError
     try:
         u = model.User()
-        u.user_name = 'manager'
-        u.display_name = 'Example manager'
-        u.email_address = 'manager@somedomain.com'
-        u.password = 'managepass'
+        u.user_name = 'chad3814'
+        u.display_name = 'Chad Walker'
+        u.email_address = 'chad@cwalker.dev'
+        u.password = 'password'
 
         model.DBSession.add(u)
-
-        g = model.Group()
-        g.group_name = 'managers'
-        g.display_name = 'Managers Group'
-
-        g.users.append(u)
-
-        model.DBSession.add(g)
-
-        p = model.Permission()
-        p.permission_name = 'manage'
-        p.description = 'This permission gives an administrative right'
-        p.groups.append(g)
-
-        model.DBSession.add(p)
-
-        u1 = model.User()
-        u1.user_name = 'editor'
-        u1.display_name = 'Example editor'
-        u1.email_address = 'editor@somedomain.com'
-        u1.password = 'editpass'
-
-        model.DBSession.add(u1)
         model.DBSession.flush()
         transaction.commit()
     except IntegrityError:

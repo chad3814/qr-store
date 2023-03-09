@@ -15,7 +15,7 @@ from qrstore.lib.base import BaseController
 from qrstore.controllers.error import ErrorController
 from qrstore.model.container import Container
 
-from uuid import uuid4
+from uuid6 import uuid7
 import qrcode
 import io
 
@@ -51,14 +51,19 @@ class RootController(BaseController):
         return dict(container=cont)
     @expose(content_type='image/png')
     def qrcode(self, uuid):
-        # from sqlalchemy.exc import InvalidRequestError
-        # try:
-        #     cont = DBSession.query(Container).filter_by(uuid=uuid).one()
-        # except InvalidRequestError:
-        #     raise abort(404)
+        from sqlalchemy.exc import InvalidRequestError
+        try:
+            cont = DBSession.query(Container).filter_by(uuid=uuid).one()
+        except InvalidRequestError:
+            raise abort(404)
         bytes_arr = io.BytesIO()
-        qrcode.make('http://127.0.0.1:8080/container/' + uuid).get_image().save(bytes_arr, format='PNG')     
+        qrcode.make('https://store.chadshost.xyz/container/' + uuid).get_image().save(bytes_arr, format='PNG')     
         return bytes_arr.getvalue()
+    @expose()
+    def new(self):
+        uuid = uuid7()
+        cont = Container(uuid=uuid, title='New Container')
+        raise redirect('/container/' + str(uuid))
 
     @expose('qrstore.templates.login')
     def login(self, came_from=lurl('/'), failure=None, login=''):

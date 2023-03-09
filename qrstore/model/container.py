@@ -12,4 +12,4 @@ class Container(DeclarativeBase):
     owner_id = Column(Integer, ForeignKey('user.user_id'), nullable=False)
     title = Column(Text)
     uuid = Column(Text, unique=True)
-    items = Column(ARRAY(Text))
+    items = Column(JSON)

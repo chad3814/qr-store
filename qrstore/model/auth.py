@@ -27,7 +27,7 @@ class User(DeclarativeBase):
     least the ``user_name`` column.
 
     """
-    __tablename__ = 'tg_user'
+    __tablename__ = 'user'
 
     user_id = Column(Integer, autoincrement=True, primary_key=True)
     user_name = Column(Unicode(16), unique=True, nullable=False)
