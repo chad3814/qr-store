@@ -100,12 +100,6 @@ class ApplicationAuthMetadata(TGAuthMetadata):
             user_name=userid
         ).first()
 
-    def get_groups(self, identity, userid):
-        return [g.group_name for g in identity['user'].groups]
-
-    def get_permissions(self, identity, userid):
-        return [p.permission_name for p in identity['user'].permissions]
-
 # Configure the authentication backend
 base_config.update_blueprint({
     'auth_backend': 'sqlalchemy',

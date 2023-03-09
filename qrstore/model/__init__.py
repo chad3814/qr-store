@@ -58,6 +58,6 @@ def init_model(engine):
     return DBSession
 
 # Import your model modules here.
-from qrstore.model.auth import User, Group, Permission
-
-__all__ = ('User', 'Group', 'Permission')
+from qrstore.model.auth import User
+from qrstore.model.container import Container
+__all__ = ('User', 'Container')

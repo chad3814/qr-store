@@ -11,67 +11,13 @@ though.
 import os
 from datetime import datetime
 from hashlib import sha256
-__all__ = ['User', 'Group', 'Permission']
+__all__ = ['User']
 
-from sqlalchemy import Table, ForeignKey, Column
+from sqlalchemy import Column
 from sqlalchemy.types import Unicode, Integer, DateTime
 from sqlalchemy.orm import relation, synonym
 
 from qrstore.model import DeclarativeBase, metadata, DBSession
-
-
-# This is the association table for the many-to-many relationship between
-# groups and permissions.
-group_permission_table = Table('tg_group_permission', metadata,
-                               Column('group_id', Integer,
-                                      ForeignKey('tg_group.group_id',
-                                                 onupdate="CASCADE",
-                                                 ondelete="CASCADE"),
-                                      primary_key=True),
-                               Column('permission_id', Integer,
-                                      ForeignKey('tg_permission.permission_id',
-                                                 onupdate="CASCADE",
-                                                 ondelete="CASCADE"),
-                                      primary_key=True))
-
-
-# This is the association table for the many-to-many relationship between
-# groups and members - this is, the memberships.
-user_group_table = Table('tg_user_group', metadata,
-                         Column('user_id', Integer,
-                                ForeignKey('tg_user.user_id',
-                                           onupdate="CASCADE",
-                                           ondelete="CASCADE"),
-                                primary_key=True),
-                         Column('group_id', Integer,
-                                ForeignKey('tg_group.group_id',
-                                           onupdate="CASCADE",
-                                           ondelete="CASCADE"),
-                                primary_key=True))
-
-
-class Group(DeclarativeBase):
-    """
-    Group definition
-
-    Only the ``group_name`` column is required.
-
-    """
-
-    __tablename__ = 'tg_group'
-
-    group_id = Column(Integer, autoincrement=True, primary_key=True)
-    group_name = Column(Unicode(16), unique=True, nullable=False)
-    display_name = Column(Unicode(255))
-    created = Column(DateTime, default=datetime.now)
-    users = relation('User', secondary=user_group_table, backref='groups')
-
-    def __repr__(self):
-        return '<Group: name=%s>' % repr(self.group_name)
-
-    def __unicode__(self):
-        return self.group_name
-
 
 class User(DeclarativeBase):
     """
@@ -99,14 +45,6 @@ class User(DeclarativeBase):
 
     def __unicode__(self):
         return self.display_name or self.user_name
-
-    @property
-    def permissions(self):
-        """Return a set with all permissions granted to the user."""
-        perms = set()
-        for g in self.groups:
-            perms = perms | set(g.permissions)
-        return perms
 
     @classmethod
     def by_email_address(cls, email):
@@ -160,27 +98,3 @@ class User(DeclarativeBase):
         hash = sha256()
         hash.update((password + self.password[:64]).encode('utf-8'))
         return self.password[64:] == hash.hexdigest()
-
-
-class Permission(DeclarativeBase):
-    """
-    Permission definition.
-
-    Only the ``permission_name`` column is required.
-
-    """
-
-    __tablename__ = 'tg_permission'
-
-    permission_id = Column(Integer, autoincrement=True, primary_key=True)
-    permission_name = Column(Unicode(63), unique=True, nullable=False)
-    description = Column(Unicode(255))
-
-    groups = relation(Group, secondary=group_permission_table,
-                      backref='permissions')
-
-    def __repr__(self):
-        return '<Permission: name=%s>' % repr(self.permission_name)
-
-    def __unicode__(self):
-        return self.permission_name

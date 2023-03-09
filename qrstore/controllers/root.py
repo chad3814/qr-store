@@ -2,21 +2,24 @@
 """Main Controller"""
 
 from tg import expose, flash, require, url, lurl
-from tg import request, redirect, tmpl_context
+from tg import request, redirect, tmpl_context, abort
 from tg.i18n import ugettext as _, lazy_ugettext as l_
 from tg.exceptions import HTTPFound
 from tg import predicates
 from qrstore import model
 from qrstore.controllers.secure import SecureController
 from qrstore.model import DBSession
-from tgext.admin.tgadminconfig import BootstrapTGAdminConfig as TGAdminConfig
-from tgext.admin.controller import AdminController
 
+from qrstore.utils.git_sha import GitSha
 from qrstore.lib.base import BaseController
 from qrstore.controllers.error import ErrorController
+from qrstore.model.container import Container
+
+from uuid import uuid4
+import qrcode
+import io
 
 __all__ = ['RootController']
-
 
 class RootController(BaseController):
     """
@@ -32,47 +35,30 @@ class RootController(BaseController):
     must be wrapped around with :class:`tg.controllers.WSGIAppController`.
 
     """
-    secc = SecureController()
-    admin = AdminController(model, DBSession, config_type=TGAdminConfig)
-
     error = ErrorController()
 
     def _before(self, *args, **kw):
-        tmpl_context.project_name = "qrstore"
+        tmpl_context.project_name = "QR-Store"
+        tmpl_context.git_sha = GitSha()[0:6]
 
     @expose('qrstore.templates.index')
     def index(self):
         """Handle the front-page."""
         return dict(page='index')
-    @expose('qrstore.templates.about')
-    def about(self):
-        """Handle the 'about' page."""
-        return dict(page='about')
-
-    @expose('qrstore.templates.environ')
-    def environ(self):
-        """This method showcases TG's access to the wsgi environment."""
-        return dict(page='environ', environment=request.environ)
-
-    @expose('qrstore.templates.data')
-    @expose('json')
-    def data(self, **kw):
-        """
-        This method showcases how you can use the same controller
-        for a data page and a display page.
-        """
-        return dict(page='data', params=kw)
-    @expose('qrstore.templates.index')
-    @require(predicates.has_permission('manage', msg=l_('Only for managers')))
-    def manage_permission_only(self, **kw):
-        """Illustrate how a page for managers only works."""
-        return dict(page='managers stuff')
-
-    @expose('qrstore.templates.index')
-    @require(predicates.is_user('editor', msg=l_('Only for the editor')))
-    def editor_user_only(self, **kw):
-        """Illustrate how a page exclusive for the editor works."""
-        return dict(page='editor stuff')
+    @expose('qrstore.templates.container')
+    def container(self, uuid):
+        cont = DBSession.query(Container).filter_by(uuid=uuid).one()
+        return dict(container=cont)
+    @expose(content_type='image/png')
+    def qrcode(self, uuid):
+        # from sqlalchemy.exc import InvalidRequestError
+        # try:
+        #     cont = DBSession.query(Container).filter_by(uuid=uuid).one()
+        # except InvalidRequestError:
+        #     raise abort(404)
+        bytes_arr = io.BytesIO()
+        qrcode.make('http://127.0.0.1:8080/container/' + uuid).get_image().save(bytes_arr, format='PNG')     
+        return bytes_arr.getvalue()
 
     @expose('qrstore.templates.login')
     def login(self, came_from=lurl('/'), failure=None, login=''):
